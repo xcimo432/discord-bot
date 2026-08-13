@@ -21,11 +21,10 @@ async def on_ready():
     print(f'[A.A.I.-01] Бот запущен как {bot.user.name}')
     print(f'[A.A.I.-01] ID бота: {bot.user.id}')
     print(f'[A.A.I.-01] Разрешённые пользователи: {ALLOWED_USERS}')
-    # СТАТУС "ИГРАЕТ В FLOWMUSIC"
     await bot.change_presence(status=discord.Status.online, activity=discord.Game('Flowmusic'))
 
-@bot.command(name='help')
-async def help_command(ctx):
+@bot.command(name='commands')
+async def commands_command(ctx):
     """Показать все команды бота"""
     embed = discord.Embed(
         title='📋 Список команд бота',
@@ -89,13 +88,12 @@ async def help_command(ctx):
         inline=False
     )
     embed.add_field(
-        name='🟢 /help',
+        name='🟢 /commands',
         value='Показать этот список команд',
         inline=False
     )
     
     embed.set_footer(text='✅ - требуют прав доступа | 🟢 - доступны всем')
-    embed.set_author(name='A.A.I.-01', icon_url=bot.user.avatar.url if bot.user.avatar else None)
     
     await ctx.reply(embed=embed)
 
