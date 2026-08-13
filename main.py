@@ -25,8 +25,8 @@ async def on_ready():
 
 # ===== КОМАНДЫ =====
 
-@bot.command(name='help')
-async def help_command(ctx):
+@bot.command(name='commands')
+async def commands_command(ctx):
     """Показать все команды бота"""
     embed = discord.Embed(
         title='📋 Список команд бота',
@@ -90,7 +90,7 @@ async def help_command(ctx):
         inline=False
     )
     embed.add_field(
-        name='🟢 !help',
+        name='🟢 !commands',
         value='Показать этот список команд',
         inline=False
     )
