@@ -21,7 +21,83 @@ async def on_ready():
     print(f'[A.A.I.-01] Бот запущен как {bot.user.name}')
     print(f'[A.A.I.-01] ID бота: {bot.user.id}')
     print(f'[A.A.I.-01] Разрешённые пользователи: {ALLOWED_USERS}')
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game('Готов к работе'))
+    # СТАТУС "ИГРАЕТ В FLOWMUSIC"
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game('Flowmusic'))
+
+@bot.command(name='help')
+async def help_command(ctx):
+    """Показать все команды бота"""
+    embed = discord.Embed(
+        title='📋 Список команд бота',
+        description='Все команды бота. Команды с ✅ доступны только разрешённым пользователям.',
+        color=discord.Color.blue()
+    )
+    
+    embed.add_field(
+        name='✅ /say [текст]',
+        value='Отправить сообщение от лица бота',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /say_embed [заголовок] [описание]',
+        value='Отправить красивое Embed-сообщение',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /say_rule [заголовок] [цвет] [описание]',
+        value='Отправить правило в красивом оформлении\nЦвета: red, green, blue, yellow, purple, orange',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /say_dm [@пользователь] [текст]',
+        value='Отправить сообщение в ЛС от лица бота',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /add_user [ID]',
+        value='Добавить пользователя в список разрешённых',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /remove_user [ID]',
+        value='Удалить пользователя из списка разрешённых',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ /list_users',
+        value='Показать список разрешённых пользователей',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 /hello',
+        value='Бот поздоровается с тобой',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 /ping',
+        value='Проверить задержку бота',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 /info',
+        value='Показать информацию о боте',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 /clear [кол-во]',
+        value='Очистить сообщения в канале (макс. 100)',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 /help',
+        value='Показать этот список команд',
+        inline=False
+    )
+    
+    embed.set_footer(text='✅ - требуют прав доступа | 🟢 - доступны всем')
+    embed.set_author(name='A.A.I.-01', icon_url=bot.user.avatar.url if bot.user.avatar else None)
+    
+    await ctx.reply(embed=embed)
 
 @bot.command(name='say')
 async def say(ctx, *, message):
@@ -38,6 +114,33 @@ async def say_embed(ctx, title, *, description):
         return
     await ctx.message.delete()
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
+    await ctx.send(embed=embed)
+
+@bot.command(name='say_rule')
+async def say_rule(ctx, title, color: str = 'blue', *, description):
+    if not is_allowed(ctx):
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
+        return
+    await ctx.message.delete()
+    
+    colors = {
+        'red': discord.Color.red(),
+        'green': discord.Color.green(),
+        'blue': discord.Color.blue(),
+        'yellow': discord.Color.yellow(),
+        'purple': discord.Color.purple(),
+        'orange': discord.Color.orange()
+    }
+    embed_color = colors.get(color.lower(), discord.Color.blue())
+    
+    embed = discord.Embed(
+        title=f'📌 {title}',
+        description=description,
+        color=embed_color
+    )
+    embed.set_footer(text=f'{ctx.author.display_name}', icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+    embed.timestamp = discord.utils.utcnow()
+    
     await ctx.send(embed=embed)
 
 @bot.command(name='say_dm')
@@ -91,6 +194,24 @@ async def clear(ctx, amount: int = 5):
 @bot.command(name='hello')
 async def hello(ctx):
     await ctx.reply(f'Привет, {ctx.author.mention}!')
+
+@bot.command(name='ping')
+async def ping(ctx):
+    await ctx.reply(f'🏓 Понг! Задержка: {round(bot.latency * 1000)}мс')
+
+@bot.command(name='info')
+async def info(ctx):
+    embed = discord.Embed(
+        title='ℹ️ Информация о боте',
+        description='Бот создан для управления сервером',
+        color=discord.Color.green()
+    )
+    embed.add_field(name='Название', value=bot.user.name)
+    embed.add_field(name='ID', value=bot.user.id)
+    embed.add_field(name='Разрешённых пользователей', value=len(ALLOWED_USERS))
+    embed.add_field(name='Префикс', value=PREFIX)
+    embed.set_footer(text='A.A.I.-01')
+    await ctx.reply(embed=embed)
 
 if __name__ == '__main__':
     try:
