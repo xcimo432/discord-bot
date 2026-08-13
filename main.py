@@ -1,10 +1,9 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 import os
 
 TOKEN = os.environ.get('DISCORD_TOKEN')
-PREFIX = '/'
+PREFIX = '!'
 
 ALLOWED_USERS = [
     796346440213200906,
@@ -14,8 +13,8 @@ ALLOWED_USERS = [
 intents = discord.Intents().all()
 bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
-def is_allowed(user_id):
-    return user_id in ALLOWED_USERS
+def is_allowed(ctx):
+    return ctx.author.id in ALLOWED_USERS
 
 @bot.event
 async def on_ready():
@@ -23,42 +22,105 @@ async def on_ready():
     print(f'[A.A.I.-01] ID бота: {bot.user.id}')
     print(f'[A.A.I.-01] Разрешённые пользователи: {ALLOWED_USERS}')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game('Flowmusic'))
+
+# ===== КОМАНДЫ =====
+
+@bot.command(name='help')
+async def help_command(ctx):
+    """Показать все команды бота"""
+    embed = discord.Embed(
+        title='📋 Список команд бота',
+        description='Все команды бота. Команды с ✅ доступны только разрешённым пользователям.',
+        color=discord.Color.blue()
+    )
     
-    try:
-        synced = await bot.tree.sync()
-        print(f'[A.A.I.-01] Слеш-команд синхронизировано: {len(synced)}')
-    except Exception as e:
-        print(f'[A.A.I.-01] Ошибка синхронизации: {e}')
+    embed.add_field(
+        name='✅ !say [текст]',
+        value='Отправить сообщение от лица бота',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !say_embed [заголовок] [описание]',
+        value='Отправить красивое Embed-сообщение',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !say_rule [заголовок] [цвет] [описание]',
+        value='Отправить правило в красивом оформлении\nЦвета: red, green, blue, yellow, purple, orange, black, gray, white',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !say_dm [@пользователь] [текст]',
+        value='Отправить сообщение в ЛС от лица бота',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !add_user [ID]',
+        value='Добавить пользователя в список разрешённых',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !remove_user [ID]',
+        value='Удалить пользователя из списка разрешённых',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !list_users',
+        value='Показать список разрешённых пользователей',
+        inline=False
+    )
+    embed.add_field(
+        name='✅ !clear [кол-во]',
+        value='Очистить сообщения в канале (макс. 100)',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 !hello',
+        value='Бот поздоровается с тобой',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 !ping',
+        value='Проверить задержку бота',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 !info',
+        value='Показать информацию о боте',
+        inline=False
+    )
+    embed.add_field(
+        name='🟢 !help',
+        value='Показать этот список команд',
+        inline=False
+    )
+    
+    embed.set_footer(text='✅ - требуют прав доступа | 🟢 - доступны всем')
+    await ctx.reply(embed=embed)
 
-# ===== СЛЕШ-КОМАНДЫ =====
-
-@bot.tree.command(name='say', description='Отправить сообщение от лица бота')
-@app_commands.describe(message='Текст сообщения')
-async def say(interaction: discord.Interaction, message: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа к этой команде!', ephemeral=True)
+@bot.command(name='say')
+async def say(ctx, *, message):
+    if not is_allowed(ctx):
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
         return
-    await interaction.response.send_message(message)
+    await ctx.message.delete()
+    await ctx.send(message)
 
-@bot.tree.command(name='say_embed', description='Отправить красивое Embed-сообщение')
-@app_commands.describe(title='Заголовок', description='Описание')
-async def say_embed(interaction: discord.Interaction, title: str, description: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа к этой команде!', ephemeral=True)
+@bot.command(name='say_embed')
+async def say_embed(ctx, title, *, description):
+    if not is_allowed(ctx):
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
         return
+    await ctx.message.delete()
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
-    await interaction.response.send_message(embed=embed)
+    await ctx.send(embed=embed)
 
-@bot.tree.command(name='say_rule', description='Отправить правило в красивом оформлении')
-@app_commands.describe(
-    title='Заголовок правила',
-    color='Цвет (red, green, blue, yellow, purple, orange, black, gray, white)',
-    description='Текст правила'
-)
-async def say_rule(interaction: discord.Interaction, title: str, color: str, description: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа к этой команде!', ephemeral=True)
+@bot.command(name='say_rule')
+async def say_rule(ctx, title, color: str = 'blue', *, description):
+    if not is_allowed(ctx):
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
         return
+    await ctx.message.delete()
     
     colors = {
         'red': discord.Color.red(),
@@ -78,101 +140,83 @@ async def say_rule(interaction: discord.Interaction, title: str, color: str, des
         description=description,
         color=embed_color
     )
-    embed.set_footer(text=f'{interaction.user.display_name}', icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
+    embed.set_footer(text=f'{ctx.author.display_name}', icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
     embed.timestamp = discord.utils.utcnow()
     
-    await interaction.response.send_message(embed=embed)
+    await ctx.send(embed=embed)
 
-@bot.tree.command(name='say_dm', description='Отправить сообщение в ЛС от лица бота')
-@app_commands.describe(user='Пользователь', message='Текст сообщения')
-async def say_dm(interaction: discord.Interaction, user: discord.User, message: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа к этой команде!', ephemeral=True)
+@bot.command(name='say_dm')
+async def say_dm(ctx, user: discord.User, *, message):
+    if not is_allowed(ctx):
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
         return
     try:
         await user.send(message)
-        await interaction.response.send_message(f'✅ Сообщение отправлено пользователю {user.mention}', ephemeral=True)
+        await ctx.reply(f'✅ Сообщение отправлено пользователю {user.mention}', delete_after=3)
     except Exception as e:
-        await interaction.response.send_message(f'❌ Ошибка: {e}', ephemeral=True)
+        await ctx.reply(f'❌ Ошибка: {e}', delete_after=3)
 
-@bot.tree.command(name='add_user', description='Добавить пользователя в список разрешённых')
-@app_commands.describe(user_id='ID пользователя')
-async def add_user(interaction: discord.Interaction, user_id: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа!', ephemeral=True)
+@bot.command(name='add_user')
+async def add_user(ctx, user_id: int):
+    if ctx.author.id not in ALLOWED_USERS:
+        await ctx.reply('❌ У тебя нет доступа!', delete_after=3)
         return
-    try:
-        uid = int(user_id)
-        if uid not in ALLOWED_USERS:
-            ALLOWED_USERS.append(uid)
-            await interaction.response.send_message(f'✅ Пользователь <@{uid}> добавлен в список разрешённых', ephemeral=True)
-        else:
-            await interaction.response.send_message('❌ Этот пользователь уже в списке', ephemeral=True)
-    except ValueError:
-        await interaction.response.send_message('❌ Введи корректный ID пользователя', ephemeral=True)
+    if user_id not in ALLOWED_USERS:
+        ALLOWED_USERS.append(user_id)
+        await ctx.reply(f'✅ Пользователь <@{user_id}> добавлен в список разрешённых')
+    else:
+        await ctx.reply('❌ Этот пользователь уже в списке')
 
-@bot.tree.command(name='remove_user', description='Удалить пользователя из списка разрешённых')
-@app_commands.describe(user_id='ID пользователя')
-async def remove_user(interaction: discord.Interaction, user_id: str):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа!', ephemeral=True)
+@bot.command(name='remove_user')
+async def remove_user(ctx, user_id: int):
+    if ctx.author.id not in ALLOWED_USERS:
+        await ctx.reply('❌ У тебя нет доступа!', delete_after=3)
         return
-    try:
-        uid = int(user_id)
-        if uid in ALLOWED_USERS:
-            ALLOWED_USERS.remove(uid)
-            await interaction.response.send_message(f'✅ Пользователь <@{uid}> удалён из списка разрешённых', ephemeral=True)
-        else:
-            await interaction.response.send_message('❌ Этот пользователь не в списке', ephemeral=True)
-    except ValueError:
-        await interaction.response.send_message('❌ Введи корректный ID пользователя', ephemeral=True)
+    if user_id in ALLOWED_USERS:
+        ALLOWED_USERS.remove(user_id)
+        await ctx.reply(f'✅ Пользователь <@{user_id}> удалён из списка разрешённых')
+    else:
+        await ctx.reply('❌ Этот пользователь не в списке')
 
-@bot.tree.command(name='list_users', description='Показать список разрешённых пользователей')
-async def list_users(interaction: discord.Interaction):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа!', ephemeral=True)
+@bot.command(name='list_users')
+async def list_users(ctx):
+    if ctx.author.id not in ALLOWED_USERS:
+        await ctx.reply('❌ У тебя нет доступа!', delete_after=3)
         return
     mentions = [f'<@{uid}>' for uid in ALLOWED_USERS]
-    await interaction.response.send_message(f'📋 Разрешённые пользователи:\n' + '\n'.join(mentions), ephemeral=True)
+    await ctx.reply(f'📋 Разрешённые пользователи:\n' + '\n'.join(mentions))
 
-@bot.tree.command(name='hello', description='Поздороваться с ботом')
-async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message(f'Привет, {interaction.user.mention}!')
-
-@bot.tree.command(name='ping', description='Проверить задержку бота')
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message(f'🏓 Понг! Задержка: {round(bot.latency * 1000)}мс')
-
-@bot.tree.command(name='commands', description='Показать список всех команд')
-async def commands_command(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title='📋 Список команд бота',
-        description='Все команды бота.',
-        color=discord.Color.blue()
-    )
-    embed.add_field(name='/say [текст]', value='Отправить сообщение от лица бота', inline=False)
-    embed.add_field(name='/say_embed [заголовок] [описание]', value='Отправить красивое Embed-сообщение', inline=False)
-    embed.add_field(name='/say_rule [заголовок] [цвет] [описание]', value='Отправить правило с цветом\nЦвета: red, green, blue, yellow, purple, orange, black, gray, white', inline=False)
-    embed.add_field(name='/say_dm [@пользователь] [текст]', value='Отправить сообщение в ЛС', inline=False)
-    embed.add_field(name='/add_user [ID]', value='Добавить пользователя', inline=False)
-    embed.add_field(name='/remove_user [ID]', value='Удалить пользователя', inline=False)
-    embed.add_field(name='/list_users', value='Список разрешённых', inline=False)
-    embed.add_field(name='/hello', value='Поздороваться', inline=False)
-    embed.add_field(name='/ping', value='Проверить задержку', inline=False)
-    embed.add_field(name='/commands', value='Показать этот список', inline=False)
-    embed.set_footer(text='✅ - требуют прав доступа | 🟢 - доступны всем')
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name='clear', description='Очистить сообщения в канале')
-@app_commands.describe(amount='Количество сообщений (макс. 100)')
-async def clear(interaction: discord.Interaction, amount: int = 5):
-    if not is_allowed(interaction.user.id):
-        await interaction.response.send_message('❌ У тебя нет доступа к этой команде!', ephemeral=True)
+@bot.command(name='clear')
+async def clear(ctx, amount: int = 5):
+    if ctx.author.id not in ALLOWED_USERS:
+        await ctx.reply('❌ У тебя нет доступа к этой команде!', delete_after=3)
         return
     if amount > 100:
         amount = 100
-    deleted = await interaction.channel.purge(limit=amount)
-    await interaction.response.send_message(f'🗑️ Удалено {len(deleted)} сообщений', ephemeral=True)
+    deleted = await ctx.channel.purge(limit=amount + 1)
+    await ctx.send(f'🗑️ Удалено {len(deleted) - 1} сообщений', delete_after=3)
+
+@bot.command(name='hello')
+async def hello(ctx):
+    await ctx.reply(f'Привет, {ctx.author.mention}!')
+
+@bot.command(name='ping')
+async def ping(ctx):
+    await ctx.reply(f'🏓 Понг! Задержка: {round(bot.latency * 1000)}мс')
+
+@bot.command(name='info')
+async def info(ctx):
+    embed = discord.Embed(
+        title='ℹ️ Информация о боте',
+        description='Бот создан для управления сервером',
+        color=discord.Color.green()
+    )
+    embed.add_field(name='Название', value=bot.user.name)
+    embed.add_field(name='ID', value=bot.user.id)
+    embed.add_field(name='Разрешённых пользователей', value=len(ALLOWED_USERS))
+    embed.add_field(name='Префикс', value=PREFIX)
+    embed.set_footer(text='A.A.I.-01')
+    await ctx.reply(embed=embed)
 
 if __name__ == '__main__':
     try:
